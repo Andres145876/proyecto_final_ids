@@ -1,5 +1,6 @@
 const Donation = require('../models/Donation');
 const Inventory = require('../models/Inventory');
+const mongoose = require('mongoose');
 
 // Crear nueva donación
 exports.createDonation = async (req, res) => {
@@ -94,62 +95,87 @@ exports.getDonation = async (req, res) => {
   }
 };
 
-// Actualizar estado de donación (solo admin)
+// Actualizar estado de donación (solo admin) - CON TRANSACCIONES
 exports.updateDonationStatus = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { estado, notas } = req.body;
 
-    const donation = await Donation.findById(req.params.id);
+    const donation = await Donation.findById(req.params.id).session(session);
 
     if (!donation) {
+      await session.abortTransaction();
       return res.status(404).json({
         success: false,
         message: 'Donación no encontrada'
       });
     }
 
+    // Guardar estado anterior para validación
+    const estadoAnterior = donation.estado;
+
+    // Actualizar estado
     donation.estado = estado;
     if (notas) donation.notas = notas;
-    await donation.save();
+    await donation.save({ session });
 
-    // Si la donación es aceptada y recibida, agregar al inventario
-    if (estado === 'recibida') {
+    // Si la donación cambia a 'recibida', agregar al inventario
+    if (estado === 'recibida' && estadoAnterior !== 'recibida') {
+      console.log('🔥 AGREGANDO AL INVENTARIO:', donation.articulo);
+      
       // Buscar si ya existe un artículo similar en el inventario
       let inventoryItem = await Inventory.findOne({
         nombre: donation.articulo,
         categoria: donation.categoria,
         unidad: donation.unidad
-      });
+      }).session(session);
+      
+      console.log('📦 Artículo encontrado en inventario:', inventoryItem ? 'SÍ' : 'NO');
 
       if (inventoryItem) {
         // Si existe, aumentar la cantidad
         inventoryItem.cantidad += donation.cantidad;
-        await inventoryItem.save();
+        inventoryItem.disponible = true; // Asegurar que esté disponible
+        await inventoryItem.save({ session });
       } else {
         // Si no existe, crear nuevo item en inventario
-        await Inventory.create({
+        await Inventory.create([{
           nombre: donation.articulo,
           categoria: donation.categoria,
           cantidad: donation.cantidad,
           unidad: donation.unidad,
-          descripcion: donation.descripcion || ''
-        });
+          descripcion: donation.descripcion || `Donación de ${donation.articulo}`,
+          disponible: true
+        }], { session });
       }
     }
+
+    // Commit de la transacción si todo salió bien
+    await session.commitTransaction();
 
     await donation.populate('usuario', 'nombre email');
 
     res.status(200).json({
       success: true,
-      message: 'Estado de donación actualizado',
+      message: estado === 'recibida' 
+        ? 'Estado actualizado y agregado al inventario exitosamente'
+        : 'Estado de donación actualizado',
       donation
     });
+
   } catch (error) {
+    // Si algo falla, revertir todos los cambios
+    await session.abortTransaction();
+    
     res.status(500).json({
       success: false,
       message: 'Error al actualizar estado',
       error: error.message
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -162,6 +188,14 @@ exports.deleteDonation = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Donación no encontrada'
+      });
+    }
+
+    // Validar que no se pueda eliminar una donación ya recibida
+    if (donation.estado === 'recibida') {
+      return res.status(400).json({
+        success: false,
+        message: 'No se puede eliminar una donación que ya fue recibida y agregada al inventario'
       });
     }
 
@@ -204,12 +238,19 @@ exports.getDonationStats = async (req, res) => {
       }
     ]);
 
+    // Estadísticas adicionales
+    const recentDonations = await Donation.find()
+      .sort({ fechaDonacion: -1 })
+      .limit(5)
+      .populate('usuario', 'nombre email');
+
     res.status(200).json({
       success: true,
       stats: {
         total: totalDonations,
         byStatus: stats,
-        byCategory: categoriesStats
+        byCategory: categoriesStats,
+        recent: recentDonations
       }
     });
   } catch (error) {

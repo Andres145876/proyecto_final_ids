@@ -1,17 +1,25 @@
-// Inicialización
+// ============================================
+// ADMIN DASHBOARD - PATITAS FELICES
+// ============================================
+
+// Verificar autenticación al cargar
 document.addEventListener('DOMContentLoaded', () => {
-    const user = auth.getCurrentUser();
-    if (user) {
-        document.getElementById('admin-name').textContent = user.nombre;
+    if (!auth.requireAdmin()) {
+        return;
     }
     
-    // Cargar datos iniciales
-    loadDashboardStats();
+    initDashboard();
+});
+
+// ============ INICIALIZACIÓN ============
+async function initDashboard() {
+    const user = auth.getCurrentUser();
+    document.getElementById('admin-name').textContent = user.nombre;
     
-    // Configurar navegación
-    setupNavigation();
+    await loadDashboardStats();
+    setupSidebarNavigation();
+    setupForms();
     
-    // Configurar logout
     document.getElementById('logoutBtn').addEventListener('click', (e) => {
         e.preventDefault();
         if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
@@ -19,26 +27,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Configurar formularios
-    setupForms();
-});
+    loadAdminProfile();
+}
 
-// Configurar navegación
-function setupNavigation() {
-    const links = document.querySelectorAll('.sidebar-menu a[data-section]');
-    links.forEach(link => {
+// ============ NAVEGACIÓN DEL SIDEBAR ============
+function setupSidebarNavigation() {
+    const menuLinks = document.querySelectorAll('.sidebar-menu a:not(#logoutBtn)');
+    
+    menuLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            const section = link.dataset.section;
-            showSection(section);
-            
-            links.forEach(l => l.classList.remove('active'));
+            menuLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
+            
+            const section = link.dataset.section;
+            if (section) {
+                showSection(section);
+            }
         });
     });
 }
 
-// Mostrar sección
+// ============ MOSTRAR SECCIONES ============
 function showSection(sectionName) {
     const sections = document.querySelectorAll('.content-section');
     sections.forEach(section => {
@@ -49,8 +59,9 @@ function showSection(sectionName) {
     if (targetSection) {
         targetSection.style.display = 'block';
         
-        // Cargar datos según la sección
-        if (sectionName === 'users') {
+        if (sectionName === 'home') {
+            loadDashboardStats();
+        } else if (sectionName === 'users') {
             loadUsers();
         } else if (sectionName === 'donations') {
             loadDonations();
@@ -58,11 +69,17 @@ function showSection(sectionName) {
             loadRequests();
         } else if (sectionName === 'inventory') {
             loadInventory();
+        } else if (sectionName === 'my-donations') {
+            loadMyDonations();
+        } else if (sectionName === 'my-requests') {
+            loadMyRequests();
+        } else if (sectionName === 'profile') {
+            loadAdminProfile();
         }
     }
 }
 
-// Cargar estadísticas del dashboard
+// ============ CARGAR ESTADÍSTICAS DEL DASHBOARD ============
 async function loadDashboardStats() {
     try {
         const [users, donations, requests, inventory] = await Promise.all([
@@ -72,31 +89,28 @@ async function loadDashboardStats() {
             api.get('/inventory')
         ]);
         
-        // Estadísticas generales
-        document.getElementById('total-users').textContent = users.count || 0;
-        document.getElementById('total-donations').textContent = donations.count || 0;
-        document.getElementById('total-requests').textContent = requests.count || 0;
-        document.getElementById('total-inventory').textContent = inventory.count || 0;
+        document.getElementById('total-users').textContent = users.users.length;
+        document.getElementById('total-donations').textContent = donations.donations.length;
+        document.getElementById('total-requests').textContent = requests.requests.length;
+        document.getElementById('total-inventory').textContent = inventory.inventory.length;
         
-        // Estadísticas específicas
         const pendingDonations = donations.donations.filter(d => d.estado === 'pendiente').length;
-        document.getElementById('pending-donations').textContent = pendingDonations;
-        
         const pendingRequests = requests.requests.filter(r => r.estado === 'pendiente').length;
-        document.getElementById('pending-requests').textContent = pendingRequests;
-        
         const activeUsers = users.users.filter(u => u.activo).length;
-        document.getElementById('active-users').textContent = activeUsers;
+        const lowStock = inventory.inventory.filter(i => i.cantidad < 10 && i.disponible).length;
         
-        const lowStock = inventory.inventory.filter(i => i.cantidad < 5 && i.cantidad > 0).length;
+        document.getElementById('pending-donations').textContent = pendingDonations;
+        document.getElementById('pending-requests').textContent = pendingRequests;
+        document.getElementById('active-users').textContent = activeUsers;
         document.getElementById('low-stock').textContent = lowStock;
+        
     } catch (error) {
         console.error('Error al cargar estadísticas:', error);
+        utils.showAlert('Error al cargar estadísticas del dashboard', 'danger');
     }
 }
 
-// ============ USUARIOS ============
-
+// ============ GESTIÓN DE USUARIOS ============
 async function loadUsers() {
     try {
         const response = await api.get('/users');
@@ -107,31 +121,19 @@ async function loadUsers() {
             return;
         }
         
-        const currentUser = auth.getCurrentUser();
-        
-        tbody.innerHTML = response.users.map(user => {
-            const statusBtnClass = user.activo ? 'btn-warning' : 'btn-success';
-            const statusBtnText = user.activo ? 'Desactivar' : 'Activar';
-            return `
+        tbody.innerHTML = response.users.map(user => `
             <tr>
                 <td>${user.nombre}</td>
                 <td>${user.email}</td>
-                <td><span class="badge ${user.rol === 'administrador' ? 'badge-recibida' : 'badge-pendiente'}">${user.rol.toUpperCase()}</span></td>
+                <td><span class="badge ${user.rol === 'administrador' ? 'badge-aceptada' : 'badge-pendiente'}">${user.rol.toUpperCase()}</span></td>
                 <td><span class="badge ${user.activo ? 'badge-aceptada' : 'badge-rechazada'}">${user.activo ? 'ACTIVO' : 'INACTIVO'}</span></td>
-                <td>${utils.formatDate(user.createdAt)}</td>
+                <td>${utils.formatDate(user.fechaRegistro)}</td>
                 <td>
-                    ${currentUser.id !== user._id ? `
-                        <button class="btn-sm btn-info" onclick="editUser('${user._id}')">Editar</button>
-                        <button class="btn-sm ${statusBtnClass}" 
-                                onclick="toggleUserStatus('${user._id}', ${user.activo})">
-                            ${statusBtnText}
-                        </button>
-                        <button class="btn-sm btn-danger" onclick="deleteUser('${user._id}')">Eliminar</button>
-                    ` : '<span style="color: var(--gray-color);">Tú</span>'}
+                    <button class="btn-sm btn-info" onclick="editUser('${user._id}')">Editar</button>
+                    ${user.rol !== 'administrador' ? `<button class="btn-sm btn-danger" onclick="deleteUser('${user._id}')">Eliminar</button>` : ''}
                 </td>
             </tr>
-        `;
-        }).join('');
+        `).join('');
     } catch (error) {
         console.error('Error al cargar usuarios:', error);
         utils.showAlert('Error al cargar usuarios', 'danger');
@@ -152,29 +154,12 @@ async function editUser(userId) {
         
         document.getElementById('user-modal').classList.add('active');
     } catch (error) {
-        console.error('Error al cargar usuario:', error);
         utils.showAlert('Error al cargar usuario', 'danger');
     }
 }
 
-async function toggleUserStatus(userId, currentStatus) {
-    const action = currentStatus ? 'desactivar' : 'activar';
-    if (!confirm(`¿Estás seguro de que quieres ${action} este usuario?`)) {
-        return;
-    }
-    
-    try {
-        await api.patch(`/users/${userId}/toggle-status`);
-        utils.showAlert(`Usuario ${action === 'desactivar' ? 'desactivado' : 'activado'} exitosamente`, 'success');
-        loadUsers();
-        loadDashboardStats();
-    } catch (error) {
-        utils.showAlert(error.message || 'Error al cambiar estado', 'danger');
-    }
-}
-
 async function deleteUser(userId) {
-    if (!confirm('¿Estás seguro de que quieres eliminar este usuario? Esta acción no se puede deshacer.')) {
+    if (!confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
         return;
     }
     
@@ -182,31 +167,29 @@ async function deleteUser(userId) {
         await api.delete(`/users/${userId}`);
         utils.showAlert('Usuario eliminado exitosamente', 'success');
         loadUsers();
-        loadDashboardStats();
     } catch (error) {
         utils.showAlert(error.message || 'Error al eliminar usuario', 'danger');
     }
 }
 
-// ============ DONACIONES ============
+function closeUserModal() {
+    document.getElementById('user-modal').classList.remove('active');
+}
 
+// ============ GESTIÓN DE DONACIONES ============
 async function loadDonations() {
     try {
         const statusFilter = document.getElementById('donation-status-filter').value;
-        const response = await api.get('/donations');
+        const endpoint = statusFilter ? `/donations?estado=${statusFilter}` : '/donations';
+        const response = await api.get(endpoint);
         const tbody = document.getElementById('donations-tbody');
         
-        let donations = response.donations;
-        if (statusFilter) {
-            donations = donations.filter(d => d.estado === statusFilter);
-        }
-        
-        if (donations.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No hay donaciones</td></tr>';
+        if (response.donations.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No hay donaciones registradas</td></tr>';
             return;
         }
         
-        tbody.innerHTML = donations.map(donation => `
+        tbody.innerHTML = response.donations.map(donation => `
             <tr>
                 <td>${donation.usuario.nombre}</td>
                 <td>${donation.articulo}</td>
@@ -215,8 +198,7 @@ async function loadDonations() {
                 <td><span class="badge ${utils.getBadgeClass(donation.estado)}">${donation.estado.toUpperCase()}</span></td>
                 <td>${utils.formatDate(donation.fechaDonacion)}</td>
                 <td>
-                    <button class="btn-sm btn-info" onclick="changeDonationStatus('${donation._id}')">Cambiar Estado</button>
-                    <button class="btn-sm btn-danger" onclick="deleteDonation('${donation._id}')">Eliminar</button>
+                    <button class="btn-sm btn-warning" onclick="changeDonationStatus('${donation._id}', '${donation.articulo}', '${donation.usuario.nombre}')">Cambiar Estado</button>
                 </td>
             </tr>
         `).join('');
@@ -226,58 +208,30 @@ async function loadDonations() {
     }
 }
 
-async function changeDonationStatus(donationId) {
-    try {
-        const response = await api.get(`/donations/${donationId}`);
-        const donation = response.donation;
-        
-        document.getElementById('donation-id').value = donation._id;
-        document.getElementById('donation-info').value = 
-            `${donation.articulo} - ${donation.cantidad} ${donation.unidad} de ${donation.usuario.nombre}`;
-        document.getElementById('donation-new-status').value = donation.estado;
-        document.getElementById('donation-notes').value = donation.notas || '';
-        
-        document.getElementById('donation-status-modal').classList.add('active');
-    } catch (error) {
-        console.error('Error al cargar donación:', error);
-        utils.showAlert('Error al cargar donación', 'danger');
-    }
+function changeDonationStatus(donationId, articulo, usuario) {
+    document.getElementById('donation-id').value = donationId;
+    document.getElementById('donation-info').value = `${articulo} - ${usuario}`;
+    document.getElementById('donation-status-modal').classList.add('active');
 }
 
-async function deleteDonation(donationId) {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta donación?')) {
-        return;
-    }
-    
-    try {
-        await api.delete(`/donations/${donationId}`);
-        utils.showAlert('Donación eliminada exitosamente', 'success');
-        loadDonations();
-        loadDashboardStats();
-    } catch (error) {
-        utils.showAlert(error.message || 'Error al eliminar donación', 'danger');
-    }
+function closeDonationStatusModal() {
+    document.getElementById('donation-status-modal').classList.remove('active');
 }
 
-// ============ SOLICITUDES ============
-
+// ============ GESTIÓN DE SOLICITUDES ============
 async function loadRequests() {
     try {
         const statusFilter = document.getElementById('request-status-filter').value;
-        const response = await api.get('/requests');
+        const endpoint = statusFilter ? `/requests?estado=${statusFilter}` : '/requests';
+        const response = await api.get(endpoint);
         const tbody = document.getElementById('requests-tbody');
         
-        let requests = response.requests;
-        if (statusFilter) {
-            requests = requests.filter(r => r.estado === statusFilter);
-        }
-        
-        if (requests.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No hay solicitudes</td></tr>';
+        if (response.requests.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No hay solicitudes registradas</td></tr>';
             return;
         }
         
-        tbody.innerHTML = requests.map(request => `
+        tbody.innerHTML = response.requests.map(request => `
             <tr>
                 <td>${request.usuario.nombre}</td>
                 <td>${request.articulo.nombre}</td>
@@ -285,8 +239,7 @@ async function loadRequests() {
                 <td><span class="badge ${utils.getBadgeClass(request.estado)}">${request.estado.toUpperCase()}</span></td>
                 <td>${utils.formatDate(request.fechaSolicitud)}</td>
                 <td>
-                    <button class="btn-sm btn-info" onclick="changeRequestStatus('${request._id}')">Cambiar Estado</button>
-                    <button class="btn-sm btn-danger" onclick="deleteRequest('${request._id}')">Eliminar</button>
+                    <button class="btn-sm btn-warning" onclick="changeRequestStatus('${request._id}', '${request.articulo.nombre}', '${request.usuario.nombre}')">Cambiar Estado</button>
                 </td>
             </tr>
         `).join('');
@@ -296,54 +249,28 @@ async function loadRequests() {
     }
 }
 
-async function changeRequestStatus(requestId) {
-    try {
-        const response = await api.get(`/requests/${requestId}`);
-        const request = response.request;
-        
-        document.getElementById('request-id').value = request._id;
-        document.getElementById('request-info').value = 
-            `${request.articulo.nombre} - ${request.cantidad} ${request.articulo.unidad} para ${request.usuario.nombre}`;
-        document.getElementById('request-new-status').value = request.estado;
-        document.getElementById('request-reject-reason').value = request.motivoRechazo || '';
-        document.getElementById('request-notes').value = request.notas || '';
-        
-        // Mostrar/ocultar campo de motivo de rechazo
-        document.getElementById('request-new-status').addEventListener('change', function() {
-            const rejectGroup = document.getElementById('reject-reason-group');
-            if (this.value === 'rechazada') {
-                rejectGroup.style.display = 'block';
-                document.getElementById('request-reject-reason').required = true;
-            } else {
-                rejectGroup.style.display = 'none';
-                document.getElementById('request-reject-reason').required = false;
-            }
-        });
-        
-        document.getElementById('request-status-modal').classList.add('active');
-    } catch (error) {
-        console.error('Error al cargar solicitud:', error);
-        utils.showAlert('Error al cargar solicitud', 'danger');
-    }
-}
-
-async function deleteRequest(requestId) {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta solicitud?')) {
-        return;
-    }
+function changeRequestStatus(requestId, articulo, usuario) {
+    document.getElementById('request-id').value = requestId;
+    document.getElementById('request-info').value = `${articulo} - ${usuario}`;
     
-    try {
-        await api.delete(`/requests/${requestId}`);
-        utils.showAlert('Solicitud eliminada exitosamente', 'success');
-        loadRequests();
-        loadDashboardStats();
-    } catch (error) {
-        utils.showAlert(error.message || 'Error al eliminar solicitud', 'danger');
-    }
+    const statusSelect = document.getElementById('request-new-status');
+    statusSelect.addEventListener('change', () => {
+        const rejectReasonGroup = document.getElementById('reject-reason-group');
+        if (statusSelect.value === 'rechazada') {
+            rejectReasonGroup.style.display = 'block';
+        } else {
+            rejectReasonGroup.style.display = 'none';
+        }
+    });
+    
+    document.getElementById('request-status-modal').classList.add('active');
 }
 
-// ============ INVENTARIO ============
+function closeRequestStatusModal() {
+    document.getElementById('request-status-modal').classList.remove('active');
+}
 
+// ============ GESTIÓN DE INVENTARIO ============
 async function loadInventory() {
     try {
         const response = await api.get('/inventory');
@@ -359,12 +286,8 @@ async function loadInventory() {
                 <td>${item.nombre}</td>
                 <td>${utils.formatCategory(item.categoria)}</td>
                 <td>${item.cantidad}</td>
-                <td>${utils.formatUnit(item.unidad)}</td>
-                <td>
-                    <span class="badge ${item.disponible ? 'badge-aceptada' : 'badge-rechazada'}">
-                        ${item.disponible ? 'DISPONIBLE' : 'NO DISPONIBLE'}
-                    </span>
-                </td>
+                <td>${item.unidad}</td>
+                <td><span class="badge ${item.disponible ? 'badge-aceptada' : 'badge-rechazada'}">${item.disponible ? 'SÍ' : 'NO'}</span></td>
                 <td>${utils.formatDate(item.ultimaActualizacion)}</td>
                 <td>
                     <button class="btn-sm btn-info" onclick="editInventory('${item._id}')">Editar</button>
@@ -385,10 +308,10 @@ function showAddInventoryModal() {
     document.getElementById('inventory-modal').classList.add('active');
 }
 
-async function editInventory(itemId) {
+async function editInventory(inventoryId) {
     try {
-        const response = await api.get(`/inventory/${itemId}`);
-        const item = response.item;
+        const response = await api.get(`/inventory/${inventoryId}`);
+        const item = response.inventory;
         
         document.getElementById('inventory-modal-title').textContent = 'Editar Artículo';
         document.getElementById('inventory-id').value = item._id;
@@ -401,30 +324,218 @@ async function editInventory(itemId) {
         
         document.getElementById('inventory-modal').classList.add('active');
     } catch (error) {
-        console.error('Error al cargar artículo:', error);
         utils.showAlert('Error al cargar artículo', 'danger');
     }
 }
 
-async function deleteInventory(itemId) {
-    if (!confirm('¿Estás seguro de que quieres eliminar este artículo del inventario?')) {
+async function deleteInventory(inventoryId) {
+    if (!confirm('¿Estás seguro de que quieres eliminar este artículo?')) {
         return;
     }
     
     try {
-        await api.delete(`/inventory/${itemId}`);
+        await api.delete(`/inventory/${inventoryId}`);
         utils.showAlert('Artículo eliminado exitosamente', 'success');
         loadInventory();
-        loadDashboardStats();
     } catch (error) {
         utils.showAlert(error.message || 'Error al eliminar artículo', 'danger');
     }
 }
 
-// ============ CONFIGURAR FORMULARIOS ============
+function closeInventoryModal() {
+    document.getElementById('inventory-modal').classList.remove('active');
+}
 
+// ============ MIS DONACIONES PERSONALES ============
+async function loadMyDonations() {
+    try {
+        const response = await api.get('/donations');
+        const tbody = document.getElementById('my-donations-tbody');
+        
+        const currentUserId = auth.getCurrentUser().id;
+        const myDonations = response.donations.filter(d => d.usuario._id === currentUserId);
+        
+        if (myDonations.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No has hecho donaciones personales</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = myDonations.map(donation => `
+            <tr>
+                <td>${donation.articulo}</td>
+                <td>${utils.formatCategory(donation.categoria)}</td>
+                <td>${donation.cantidad} ${donation.unidad}</td>
+                <td><span class="badge ${utils.getBadgeClass(donation.estado)}">${donation.estado.toUpperCase()}</span></td>
+                <td>${utils.formatDate(donation.fechaDonacion)}</td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error al cargar mis donaciones:', error);
+        utils.showAlert('Error al cargar donaciones personales', 'danger');
+    }
+}
+
+// ============ MIS SOLICITUDES PERSONALES ============
+async function loadMyRequests() {
+    try {
+        const response = await api.get('/requests');
+        const tbody = document.getElementById('my-requests-tbody');
+        
+        const currentUserId = auth.getCurrentUser().id;
+        const myRequests = response.requests.filter(r => r.usuario._id === currentUserId);
+        
+        const activeRequest = myRequests.find(r => 
+            ['pendiente', 'aceptada', 'enviada'].includes(r.estado)
+        );
+        
+        const requestAlert = document.getElementById('my-request-alert');
+        const newRequestBtn = document.getElementById('my-new-request-btn');
+        
+        if (activeRequest) {
+            requestAlert.innerHTML = `
+                <div class="alert alert-info">
+                    Tienes una solicitud activa (${activeRequest.estado}). 
+                    Solo puedes tener una solicitud a la vez.
+                </div>
+            `;
+            newRequestBtn.disabled = true;
+            newRequestBtn.style.opacity = '0.5';
+        } else {
+            requestAlert.innerHTML = '';
+            newRequestBtn.disabled = false;
+            newRequestBtn.style.opacity = '1';
+        }
+        
+        if (myRequests.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No has hecho solicitudes personales</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = myRequests.map(request => {
+            const canEdit = request.estado === 'pendiente';
+            const canDelete = request.estado === 'pendiente';
+            
+            return `
+                <tr>
+                    <td>${request.articulo.nombre}</td>
+                    <td>${request.cantidad} ${request.articulo.unidad}</td>
+                    <td><span class="badge ${utils.getBadgeClass(request.estado)}">${request.estado.toUpperCase()}</span></td>
+                    <td>${utils.formatDate(request.fechaSolicitud)}</td>
+                    <td>
+                        ${canEdit ? `<button class="btn-sm btn-info" onclick="editMyRequest('${request._id}')">Modificar</button>` : ''}
+                        ${canDelete ? `<button class="btn-sm btn-danger" onclick="deleteMyRequest('${request._id}')">Eliminar</button>` : ''}
+                        ${!canEdit && !canDelete ? '<span style="color: var(--gray-color);">Sin acciones</span>' : ''}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error al cargar mis solicitudes:', error);
+        utils.showAlert('Error al cargar solicitudes personales', 'danger');
+    }
+}
+
+async function showMyRequestModal() {
+    try {
+        const response = await api.get('/inventory?disponible=true');
+        const select = document.getElementById('request-articulo');
+        
+        select.innerHTML = '<option value="">Seleccionar artículo...</option>' +
+            response.inventory
+                .filter(item => item.cantidad > 0)
+                .map(item => `
+                    <option value="${item._id}" data-max="${item.cantidad}" data-unit="${item.unidad}">
+                        ${item.nombre} (${item.cantidad} ${item.unidad} disponibles)
+                    </option>
+                `).join('');
+        
+        select.addEventListener('change', () => {
+            const selectedOption = select.options[select.selectedIndex];
+            const maxCantidad = selectedOption.dataset.max;
+            const unit = selectedOption.dataset.unit;
+            
+            const cantidadInput = document.getElementById('request-cantidad');
+            cantidadInput.max = maxCantidad;
+            
+            document.getElementById('request-max-cantidad').textContent = 
+                `Máximo disponible: ${maxCantidad} ${unit}`;
+        });
+        
+        document.getElementById('request-modal').classList.add('active');
+    } catch (error) {
+        utils.showAlert('Error al cargar inventario', 'danger');
+    }
+}
+
+async function editMyRequest(requestId) {
+    try {
+        const response = await api.get(`/requests/${requestId}`);
+        const request = response.request;
+        
+        document.getElementById('edit-request-id').value = request._id;
+        document.getElementById('edit-request-articulo-name').value = request.articulo.nombre;
+        document.getElementById('edit-request-cantidad').value = request.cantidad;
+        document.getElementById('edit-request-cantidad').max = request.articulo.cantidad;
+        document.getElementById('edit-request-descripcion').value = request.descripcion || '';
+        
+        document.getElementById('edit-request-max-cantidad').textContent = 
+            `Máximo disponible: ${request.articulo.cantidad} ${request.articulo.unidad}`;
+        
+        document.getElementById('edit-request-modal').classList.add('active');
+    } catch (error) {
+        utils.showAlert('Error al cargar solicitud', 'danger');
+    }
+}
+
+async function deleteMyRequest(requestId) {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta solicitud?')) {
+        return;
+    }
+    
+    try {
+        await api.delete(`/requests/${requestId}`);
+        utils.showAlert('Solicitud eliminada exitosamente', 'success');
+        loadMyRequests();
+    } catch (error) {
+        utils.showAlert(error.message || 'Error al eliminar solicitud', 'danger');
+    }
+}
+
+function closeMyRequestModal() {
+    document.getElementById('request-modal').classList.remove('active');
+}
+
+function closeEditRequestModal() {
+    document.getElementById('edit-request-modal').classList.remove('active');
+}
+
+// ============ PERFIL DE ADMINISTRADOR ============
+async function loadAdminProfile() {
+    try {
+        const response = await api.get('/auth/profile');
+        const user = response.user;
+        
+        document.getElementById('admin-nombre').value = user.nombre;
+        document.getElementById('admin-email').value = user.email;
+        document.getElementById('admin-telefono').value = user.telefono || '';
+        document.getElementById('admin-direccion').value = user.direccion || '';
+        document.getElementById('admin-fecha-registro').value = utils.formatDate(user.fechaRegistro);
+    } catch (error) {
+        console.error('Error al cargar perfil:', error);
+    }
+}
+
+function showProfileAlert(message, type) {
+    const container = document.getElementById('profile-alert');
+    container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+    
+    setTimeout(() => {
+        container.innerHTML = '';
+    }, 5000);
+}
+
+// ============ CONFIGURACIÓN DE FORMULARIOS ============
 function setupForms() {
-    // Formulario de usuario
     document.getElementById('user-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -442,13 +553,11 @@ function setupForms() {
             utils.showAlert('Usuario actualizado exitosamente', 'success');
             closeUserModal();
             loadUsers();
-            loadDashboardStats();
         } catch (error) {
             utils.showAlert(error.message || 'Error al actualizar usuario', 'danger');
         }
     });
     
-    // Formulario de estado de donación
     document.getElementById('donation-status-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -460,94 +569,170 @@ function setupForms() {
         
         try {
             await api.patch(`/donations/${donationId}/status`, formData);
-            utils.showAlert('Estado de donación actualizado', 'success');
+            utils.showAlert('Estado actualizado exitosamente', 'success');
             closeDonationStatusModal();
             loadDonations();
-            loadInventory();
             loadDashboardStats();
         } catch (error) {
             utils.showAlert(error.message || 'Error al actualizar estado', 'danger');
         }
     });
     
-    // Formulario de estado de solicitud
     document.getElementById('request-status-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const requestId = document.getElementById('request-id').value;
+        const newStatus = document.getElementById('request-new-status').value;
+        
         const formData = {
-            estado: document.getElementById('request-new-status').value,
+            estado: newStatus,
             notas: document.getElementById('request-notes').value
         };
         
-        if (formData.estado === 'rechazada') {
+        if (newStatus === 'rechazada') {
             formData.motivoRechazo = document.getElementById('request-reject-reason').value;
+            if (!formData.motivoRechazo) {
+                utils.showAlert('Debes proporcionar un motivo de rechazo', 'danger');
+                return;
+            }
         }
         
         try {
             await api.patch(`/requests/${requestId}/status`, formData);
-            utils.showAlert('Estado de solicitud actualizado', 'success');
+            utils.showAlert('Estado actualizado exitosamente', 'success');
             closeRequestStatusModal();
             loadRequests();
-            loadInventory();
             loadDashboardStats();
         } catch (error) {
             utils.showAlert(error.message || 'Error al actualizar estado', 'danger');
         }
     });
     
-    // Formulario de inventario
     document.getElementById('inventory-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const itemId = document.getElementById('inventory-id').value;
+        const inventoryId = document.getElementById('inventory-id').value;
         const formData = {
             nombre: document.getElementById('inventory-nombre').value,
             categoria: document.getElementById('inventory-categoria').value,
-            cantidad: parseInt(document.getElementById('inventory-cantidad').value),
+            cantidad: parseFloat(document.getElementById('inventory-cantidad').value),
             unidad: document.getElementById('inventory-unidad').value,
             descripcion: document.getElementById('inventory-descripcion').value,
             disponible: document.getElementById('inventory-disponible').value === 'true'
         };
         
         try {
-            if (itemId) {
-                // Editar
-                await api.put(`/inventory/${itemId}`, formData);
+            if (inventoryId) {
+                await api.put(`/inventory/${inventoryId}`, formData);
                 utils.showAlert('Artículo actualizado exitosamente', 'success');
             } else {
-                // Crear
                 await api.post('/inventory', formData);
-                utils.showAlert('Artículo agregado al inventario', 'success');
+                utils.showAlert('Artículo agregado exitosamente', 'success');
             }
-            
             closeInventoryModal();
             loadInventory();
             loadDashboardStats();
         } catch (error) {
-            if (error.existingItem) {
-                utils.showAlert(`Ya existe un artículo similar: ${error.existingItem.nombre} (${error.existingItem.cantidad} disponibles)`, 'warning');
-            } else {
-                utils.showAlert(error.message || 'Error al guardar artículo', 'danger');
-            }
+            utils.showAlert(error.message || 'Error al guardar artículo', 'danger');
+        }
+    });
+    
+    document.getElementById('admin-profile-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+            nombre: document.getElementById('admin-nombre').value,
+            telefono: document.getElementById('admin-telefono').value,
+            direccion: document.getElementById('admin-direccion').value
+        };
+        
+        try {
+            const response = await api.put('/auth/profile', formData);
+            
+            const user = auth.getCurrentUser();
+            user.nombre = response.user.nombre;
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            document.getElementById('admin-name').textContent = response.user.nombre;
+            
+            showProfileAlert('Perfil actualizado exitosamente', 'success');
+        } catch (error) {
+            showProfileAlert(error.message || 'Error al actualizar perfil', 'danger');
+        }
+    });
+    
+    document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        
+        if (newPassword !== confirmPassword) {
+            showProfileAlert('Las contraseñas no coinciden', 'danger');
+            return;
+        }
+        
+        if (newPassword.length < 6) {
+            showProfileAlert('La contraseña debe tener al menos 6 caracteres', 'danger');
+            return;
+        }
+        
+        try {
+            await api.put('/auth/change-password', {
+                currentPassword,
+                newPassword
+            });
+            
+            showProfileAlert('Contraseña actualizada exitosamente', 'success');
+            document.getElementById('change-password-form').reset();
+        } catch (error) {
+            showProfileAlert(error.message || 'Error al cambiar contraseña', 'danger');
+        }
+    });
+    
+    document.getElementById('my-request-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+            articulo: document.getElementById('request-articulo').value,
+            cantidad: parseInt(document.getElementById('request-cantidad').value),
+            descripcion: document.getElementById('request-descripcion').value
+        };
+        
+        try {
+            await api.post('/requests', formData);
+            utils.showAlert('Solicitud creada exitosamente', 'success');
+            closeMyRequestModal();
+            document.getElementById('my-request-form').reset();
+            loadMyRequests();
+        } catch (error) {
+            utils.showAlert(error.message || 'Error al crear solicitud', 'danger');
+        }
+    });
+    
+    document.getElementById('edit-my-request-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const requestId = document.getElementById('edit-request-id').value;
+        const formData = {
+            cantidad: parseInt(document.getElementById('edit-request-cantidad').value),
+            descripcion: document.getElementById('edit-request-descripcion').value
+        };
+        
+        try {
+            await api.put(`/requests/${requestId}`, formData);
+            utils.showAlert('Solicitud actualizada exitosamente', 'success');
+            closeEditRequestModal();
+            loadMyRequests();
+        } catch (error) {
+            utils.showAlert(error.message || 'Error al actualizar solicitud', 'danger');
         }
     });
 }
 
-// ============ FUNCIONES DE MODALES ============
-
-function closeUserModal() {
-    document.getElementById('user-modal').classList.remove('active');
-}
-
-function closeDonationStatusModal() {
-    document.getElementById('donation-status-modal').classList.remove('active');
-}
-
-function closeRequestStatusModal() {
-    document.getElementById('request-status-modal').classList.remove('active');
-}
-
-function closeInventoryModal() {
-    document.getElementById('inventory-modal').classList.remove('active');
-}
+window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
+    }
+});

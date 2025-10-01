@@ -31,7 +31,7 @@ const donationSchema = new mongoose.Schema({
   estado: {
     type: String,
     enum: ['pendiente', 'aceptada', 'rechazada', 'recibida'],
-    default: 'pendiente'
+    default: 'aceptada'
   },
   descripcion: {
     type: String,

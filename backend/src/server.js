@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path'); // AGREGAR ESTA LÍNEA
 const connectDB = require('./config/database');
 
 // Importar rutas
@@ -22,20 +23,43 @@ app.use(helmet());
 
 // CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5500',
+      'http://localhost:5501',
+      'http://localhost:8080',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5500',
+      'http://127.0.0.1:5501',
+      'http://127.0.0.1:8080'
+    ];
+    
+    if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
+      allowedOrigins.push(process.env.FRONTEND_URL);
+    }
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('Origin no permitido:', origin);
+      callback(null, true);
+    }
+  },
   credentials: true
 }));
 
-// Rate limiting - prevenir ataques de fuerza bruta
+// Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // límite de 100 peticiones por ventana
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: 'Demasiadas peticiones desde esta IP, por favor intenta de nuevo más tarde.'
 });
 
 app.use('/api/', limiter);
 
-// Más estricto para login y registro
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -49,7 +73,22 @@ app.use('/api/auth/register', authLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rutas
+// ============================================
+// AGREGAR ESTAS LÍNEAS PARA SERVIR EL FRONTEND
+// ============================================
+app.use(express.static(path.join(__dirname, '../../frontend')));
+
+// Rutas específicas para el frontend
+app.get('/admin/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../frontend/admin/dashboard.html'));
+});
+
+app.get('/admin/dashboard.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../frontend/admin/dashboard.html'));
+});
+// ============================================
+
+// Rutas de la API
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/donations', donationRoutes);
@@ -108,7 +147,6 @@ const server = app.listen(PORT, () => {
   console.log(`Ambiente: ${process.env.NODE_ENV}`);
 });
 
-// Manejo de rechazos de promesas no capturados
 process.on('unhandledRejection', (err) => {
   console.error(`Error: ${err.message}`);
   server.close(() => process.exit(1));
