@@ -70,7 +70,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // ============================================
 // Servir frontend (si existe)
 // ============================================
-const frontendPath = path.join(__dirname, '../../frontend');
+const frontendPath = path.join(__dirname, '../frontend');
 app.use(express.static(frontendPath));
 
 // Rutas específicas del frontend
