@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const path = require('path'); // AGREGAR ESTA LÍNEA
+const path = require('path');
 const connectDB = require('./config/database');
 
 // Importar rutas
@@ -19,17 +19,16 @@ const app = express();
 connectDB();
 
 // Middleware de seguridad
-
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrcAttr: ["'unsafe-inline'", "'unsafe-hashes'"], // <-- AGREGAR ESTA LÍNEA
+        scriptSrcAttr: ["'unsafe-inline'", "'unsafe-hashes'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "http://localhost:5000", "http://127.0.0.1:5000", "https://patitas-backend.onrender.com"],
+        connectSrc: ["'self'", process.env.FRONTEND_URL, "https://patitas-backend.onrender.com"],
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
@@ -39,33 +38,10 @@ app.use(
     crossOriginEmbedderPolicy: false,
   })
 );
-// CORS
+
+// CORS simplificado para producción
 app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5500',
-      'http://localhost:5501',
-      'http://localhost:8080',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5500',
-      'http://127.0.0.1:5501',
-      'http://127.0.0.1:8080'
-    ];
-    
-    if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
-      allowedOrigins.push(process.env.FRONTEND_URL);
-    }
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('Origin no permitido:', origin);
-      callback(null, true);
-    }
-  },
+  origin: process.env.FRONTEND_URL || '*', // Cambiar '*' por tu frontend URL en producción
   credentials: true
 }));
 
@@ -92,17 +68,18 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ============================================
-// AGREGAR ESTAS LÍNEAS PARA SERVIR EL FRONTEND
+// Servir frontend (si existe)
 // ============================================
-app.use(express.static(path.join(__dirname, '../../frontend')));
+const frontendPath = path.join(__dirname, '../../frontend');
+app.use(express.static(frontendPath));
 
-// Rutas específicas para el frontend
+// Rutas específicas del frontend
 app.get('/admin/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/admin/dashboard.html'));
+    res.sendFile(path.join(frontendPath, 'admin/dashboard.html'));
 });
 
 app.get('/admin/dashboard.html', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/admin/dashboard.html'));
+    res.sendFile(path.join(frontendPath, 'admin/dashboard.html'));
 });
 // ============================================
 
@@ -137,7 +114,7 @@ app.get('/', (req, res) => {
       inventory: '/api/inventory'
     }
   });
-});
+}); 
 
 // Manejo de rutas no encontradas
 app.use((req, res) => {
