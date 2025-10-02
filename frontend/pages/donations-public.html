@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donaciones - Patitas Felices</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🐾 Patitas Felices</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/proyecto_final_ids/frontend/index.html">Inicio</a>
+                <a href="/proyecto_final_ids/frontend/pages/contact.html">Contacto</a>
+                <a href="/proyecto_final_ids/frontend/pages/login.html" class="btn-primary">Iniciar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title" id="page-title">Todas las Donaciones</h2>
+            
+            <div class="form-group" style="max-width: 400px; margin: 0 auto 3rem;">
+                <label for="category-filter">Filtrar por Categoría</label>
+                <select id="category-filter" onchange="filterDonations()">
+                    <option value="">Todas las categorías</option>
+                    <option value="alimento_perros">Alimento para Perros</option>
+                    <option value="alimento_gatos">Alimento para Gatos</option>
+                    <option value="juguetes">Juguetes</option>
+                    <option value="medicamentos">Medicamentos</option>
+                    <option value="accesorios">Accesorios</option>
+                    <option value="mantas">Mantas</option>
+                    <option value="otros">Otros</option>
+                </select>
+            </div>
+
+            <div id="donations-container" class="cards-grid">
+                <p style="text-align: center; grid-column: 1/-1;">Cargando donaciones...</p>
+            </div>
+
+            <div style="text-align: center; margin-top: 3rem;">
+                <p style="font-size: 1.2rem; margin-bottom: 1rem;">¿Quieres hacer una donación?</p>
+                <a href="/proyecto_final_ids/frontend/pages/register.html" class="btn-primary btn-lg">Únete a Patitas Felices</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Patitas Felices. Todos los derechos reservados.</p>
+            <p>Una plataforma dedicada al bienestar animal 🐾</p>
+        </div>
+    </footer>
+
+    <script src="/proyecto_final_ids/frontend/js/api.js"></script>
+    <script>
+        let allDonations = [];
+
+        // Cargar categoría desde URL si existe
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryFromUrl = urlParams.get('categoria');
+
+        if (categoryFromUrl) {
+            document.getElementById('category-filter').value = categoryFromUrl;
+            updateTitle(categoryFromUrl);
+        }
+
+        // Cargar todas las donaciones públicas
+        async function loadPublicDonations() {
+            try {
+                const response = await fetch('http://localhost:5000/api/donations', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    allDonations = data.donations.filter(d => d.estado === 'aceptada' || d.estado === 'recibida');
+                    displayDonations();
+                } else {
+                    document.getElementById('donations-container').innerHTML = 
+                        '<p style="text-align: center; grid-column: 1/-1;">No se pudieron cargar las donaciones.</p>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('donations-container').innerHTML = 
+                    '<p style="text-align: center; grid-column: 1/-1;">Error al conectar con el servidor. Intenta más tarde.</p>';
+            }
+        }
+
+        function displayDonations() {
+            const container = document.getElementById('donations-container');
+            const selectedCategory = document.getElementById('category-filter').value;
+
+            let filteredDonations = allDonations;
+            if (selectedCategory) {
+                filteredDonations = allDonations.filter(d => d.categoria === selectedCategory);
+            }
+
+            if (filteredDonations.length === 0) {
+                container.innerHTML = '<p style="text-align: center; grid-column: 1/-1;">No hay donaciones en esta categoría aún.</p>';
+                return;
+            }
+
+            container.innerHTML = filteredDonations.map(donation => {
+                const categoryName = formatCategory(donation.categoria);
+                const icon = getCategoryIcon(donation.categoria);
+                const date = new Date(donation.fechaDonacion).toLocaleDateString('es-MX', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                return `
+                    <div class="card">
+                        <div class="card-icon">${icon}</div>
+                        <h3>${donation.articulo}</h3>
+                        <p><strong>Categoría:</strong> ${categoryName}</p>
+                        <p><strong>Cantidad:</strong> ${donation.cantidad} ${donation.unidad}</p>
+                        <p><strong>Fecha:</strong> ${date}</p>
+                        <span class="badge badge-${donation.estado}">${donation.estado.toUpperCase()}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterDonations() {
+            const selectedCategory = document.getElementById('category-filter').value;
+            updateTitle(selectedCategory);
+            displayDonations();
+        }
+
+        function updateTitle(categoria) {
+            const title = document.getElementById('page-title');
+            if (categoria) {
+                title.textContent = `Donaciones de ${formatCategory(categoria)}`;
+            } else {
+                title.textContent = 'Todas las Donaciones';
+            }
+        }
+
+        function formatCategory(category) {
+            const categories = {
+                'alimento_perros': 'Alimento para Perros',
+                'alimento_gatos': 'Alimento para Gatos',
+                'juguetes': 'Juguetes',
+                'medicamentos': 'Medicamentos',
+                'accesorios': 'Accesorios',
+                'mantas': 'Mantas',
+                'otros': 'Otros'
+            };
+            return categories[category] || category;
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'alimento_perros': '🍖',
+                'alimento_gatos': '🐟',
+                'juguetes': '🎾',
+                'medicamentos': '💊',
+                'accesorios': '🦴',
+                'mantas': '🛏️',
+                'otros': '📦'
+            };
+            return icons[category] || '📦';
+        }
+
+        // Cargar donaciones al iniciar
+        loadPublicDonations();
+    </script>
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Dashboard - Patitas Felices</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🐾 Patitas Felices</h2>
+                <p id="user-name" style="font-size: 0.9rem; opacity: 0.8;"></p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active" data-section="home">Inicio</a></li>
+                <li><a href="#" data-section="donations">Mis Donaciones</a></li>
+                <li><a href="#" data-section="requests">Mis Solicitudes</a></li>
+                <li><a href="#" data-section="inventory">Ver Inventario</a></li>
+                <li><a href="#" data-section="profile">Mi Perfil</a></li>
+                <li><a href="#" id="logoutBtn" style="color: var(--danger-color);">Cerrar Sesión</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div id="alert-container"></div>
+
+            <!-- Sección Inicio -->
+            <section id="home-section" class="content-section">
+                <h2>Bienvenido, <span id="welcome-name"></span>!</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3 id="total-donations">0</h3>
+                        <p>Donaciones Realizadas</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="total-requests">0</h3>
+                        <p>Solicitudes Activas</p>
+                    </div>
+                </div>
+
+                <div class="cards-grid" style="margin-top: 2rem;">
+                    <div class="card">
+                        <h3>Hacer una Donación</h3>
+                        <p>Dona alimentos, juguetes o artículos para ayudar a nuestros amigos peludos.</p>
+                        <button class="btn-primary" data-action="show-donations">Donar Ahora</button>
+                    </div>
+                    <div class="card">
+                        <h3>Solicitar Donación</h3>
+                        <p>¿Cuidas animales rescatados? Solicita artículos de nuestro inventario.</p>
+                        <button class="btn-primary" data-action="show-requests">Solicitar</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Donaciones -->
+            <section id="donations-section" class="content-section" style="display: none;">
+                <h2>Mis Donaciones</h2>
+                
+                <button class="btn-primary" data-action="new-donation">+ Nueva Donación</button>
+                
+                <div class="table-container" style="margin-top: 2rem;">
+                    <table id="donations-table">
+                        <thead>
+                            <tr>
+                                <th>Artículo</th>
+                                <th>Categoría</th>
+                                <th>Cantidad</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="donations-tbody">
+                            <tr>
+                                <td colspan="5" style="text-align: center;">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección Solicitudes -->
+            <section id="requests-section" class="content-section" style="display: none;">
+                <h2>Mis Solicitudes</h2>
+                
+                <div id="request-alert" style="margin-bottom: 1rem;"></div>
+                
+                <button class="btn-primary" id="new-request-btn" data-action="new-request">+ Nueva Solicitud</button>
+                
+                <div class="table-container" style="margin-top: 2rem;">
+                    <table id="requests-table">
+                        <thead>
+                            <tr>
+                                <th>Artículo</th>
+                                <th>Cantidad</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requests-tbody">
+                            <tr>
+                                <td colspan="5" style="text-align: center;">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección Inventario -->
+            <section id="inventory-section" class="content-section" style="display: none;">
+                <h2>Inventario Disponible</h2>
+                
+                <div class="form-group" style="max-width: 300px;">
+                    <label for="category-filter">Filtrar por Categoría</label>
+                    <select id="category-filter">
+                        <option value="">Todas las categorías</option>
+                        <option value="alimento_perros">Alimento para Perros</option>
+                        <option value="alimento_gatos">Alimento para Gatos</option>
+                        <option value="juguetes">Juguetes</option>
+                        <option value="medicamentos">Medicamentos</option>
+                        <option value="accesorios">Accesorios</option>
+                        <option value="mantas">Mantas</option>
+                        <option value="otros">Otros</option>
+                    </select>
+                </div>
+                
+                <div class="table-container" style="margin-top: 2rem;">
+                    <table id="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>Artículo</th>
+                                <th>Categoría</th>
+                                <th>Cantidad Disponible</th>
+                                <th>Unidad</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody">
+                            <tr>
+                                <td colspan="5" style="text-align: center;">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección Perfil -->
+            <section id="profile-section" class="content-section" style="display: none;">
+                <h2>Mi Perfil</h2>
+                
+                <div class="form-container" style="margin-top: 2rem;">
+                    <form id="profile-form">
+                        <div class="form-group">
+                            <label for="profile-nombre">Nombre</label>
+                            <input type="text" id="profile-nombre" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="profile-email">Email</label>
+                            <input type="email" id="profile-email" disabled>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="profile-telefono">Teléfono</label>
+                            <input type="tel" id="profile-telefono" maxlength="10">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="profile-direccion">Dirección</label>
+                            <textarea id="profile-direccion"></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn-primary">Actualizar Perfil</button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Nueva Donación -->
+    <div id="donation-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nueva Donación</h3>
+                <button type="button" class="modal-close" data-modal="donation" aria-label="Cerrar modal">&times;</button>
+            </div>
+            <form id="donation-form">
+                <div class="form-group">
+                    <label for="donation-articulo">Artículo *</label>
+                    <input type="text" id="donation-articulo" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="donation-categoria">Categoría *</label>
+                    <select id="donation-categoria" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="alimento_perros">Alimento para Perros</option>
+                        <option value="alimento_gatos">Alimento para Gatos</option>
+                        <option value="juguetes">Juguetes</option>
+                        <option value="medicamentos">Medicamentos</option>
+                        <option value="accesorios">Accesorios</option>
+                        <option value="mantas">Mantas</option>
+                        <option value="otros">Otros</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="donation-cantidad">Cantidad *</label>
+                    <input type="number" id="donation-cantidad" min="1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="donation-unidad">Unidad *</label>
+                    <select id="donation-unidad" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="kg">Kilogramos</option>
+                        <option value="unidades">Unidades</option>
+                        <option value="litros">Litros</option>
+                        <option value="paquetes">Paquetes</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="donation-descripcion">Descripción (Opcional)</label>
+                    <textarea id="donation-descripcion"></textarea>
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">Enviar Donación</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nueva Solicitud -->
+    <div id="request-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nueva Solicitud</h3>
+                <button type="button" class="modal-close" data-modal="request" aria-label="Cerrar modal">&times;</button>
+            </div>
+            <form id="request-form">
+                <div class="form-group">
+                    <label for="request-articulo">Artículo del Inventario *</label>
+                    <select id="request-articulo" required>
+                        <option value="">Seleccionar artículo...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="request-cantidad">Cantidad *</label>
+                    <input type="number" id="request-cantidad" min="1" required>
+                    <small id="request-max-cantidad" style="color: var(--gray-color);"></small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="request-descripcion">Descripción (Opcional)</label>
+                    <textarea id="request-descripcion" placeholder="¿Para qué necesitas este artículo?"></textarea>
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">Enviar Solicitud</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Solicitud -->
+    <div id="edit-request-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Modificar Solicitud</h3>
+                <button type="button" class="modal-close" data-modal="edit-request" aria-label="Cerrar modal">&times;</button>
+            </div>
+            <form id="edit-request-form">
+                <input type="hidden" id="edit-request-id">
+                
+                <div class="form-group">
+                    <label for="edit-request-articulo-name">Artículo</label>
+                    <input type="text" id="edit-request-articulo-name" disabled>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-request-cantidad">Nueva Cantidad *</label>
+                    <input type="number" id="edit-request-cantidad" min="1" required>
+                    <small id="edit-request-max-cantidad" style="color: var(--gray-color);"></small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-request-descripcion">Descripción</label>
+                    <textarea id="edit-request-descripcion"></textarea>
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">Actualizar Solicitud</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/user-dashboard.js"></script>
+</body>
+</html>

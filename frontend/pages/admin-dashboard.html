@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrador - Patitas Felices</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🐾 Admin Panel</h2>
+                <p id="admin-name" style="font-size: 0.9rem; opacity: 0.8;"></p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active" data-section="home">Dashboard</a></li>
+                
+                <li style="padding: 0.5rem 2rem; opacity: 0.5; font-size: 0.9rem; margin-top: 1rem;">ADMINISTRACIÓN</li>
+                <li><a href="#" data-section="users">Usuarios</a></li>
+                <li><a href="#" data-section="donations">Donaciones</a></li>
+                <li><a href="#" data-section="requests">Solicitudes</a></li>
+                <li><a href="#" data-section="inventory">Inventario</a></li>
+                
+                <li style="padding: 0.5rem 2rem; opacity: 0.5; font-size: 0.9rem; margin-top: 1rem;">MIS ACCIONES</li>
+                <li><a href="#" data-section="my-donations">Mis Donaciones</a></li>
+                <li><a href="#" data-section="my-requests">Mis Solicitudes</a></li>
+                <li><a href="#" data-section="profile">Mi Perfil</a></li>
+                
+                <li><a href="#" id="logoutBtn" style="color: var(--danger-color); margin-top: 1rem;">Cerrar Sesión</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div id="alert-container"></div>
+
+            <!-- Dashboard Home -->
+            <section id="home-section" class="content-section">
+                <h2>Dashboard General</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3 id="total-users">0</h3>
+                        <p>Total Usuarios</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="total-donations">0</h3>
+                        <p>Donaciones Totales</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="total-requests">0</h3>
+                        <p>Solicitudes Totales</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="total-inventory">0</h3>
+                        <p>Artículos en Inventario</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid" style="margin-top: 2rem;">
+                    <div class="stat-card">
+                        <h3 id="pending-donations">0</h3>
+                        <p>Donaciones Pendientes</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="pending-requests">0</h3>
+                        <p>Solicitudes Pendientes</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="active-users">0</h3>
+                        <p>Usuarios Activos</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="low-stock">0</h3>
+                        <p>Artículos con Bajo Stock</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Usuarios -->
+            <section id="users-section" class="content-section" style="display: none;">
+                <h2>Administrar Usuarios</h2>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Fecha Registro</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody">
+                            <tr><td colspan="6" style="text-align: center;">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección Donaciones -->
+            <section id="donations-section" class="content-section" style="display: none;">
+                <h2>Administrar Donaciones</h2>
+                
+                <div class="form-group" style="max-width: 300px;">
+                    <label>Filtrar por Estado</label>
+                    <select id="donation-status-filter">
+                        <option value="">Todos</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="aceptada">Aceptada</option>
+                        <option value="rechazada">Rechazada</option>
+                        <option value="recibida">Recibida</option>
+                    </select>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Artículo</th>
+                                <th>Categoría</th>
+                                <th>Cantidad</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="donations-tbody">
+                            <tr><td colspan="7" style="text-align: center;">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección Solicitudes -->
+            <section id="requests-section" class="content-section" style="display: none;">
+                <h2>Administrar Solicitudes</h2>
+                
+                <div class="form-group" style="max-width: 300px;">
+                    <label>Filtrar por Estado</label>
+                    <select id="request-status-filter">
+                        <option value="">Todos</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="aceptada">Aceptada</option>
+                        <option value="rechazada">Rechazada</option>
+                        <option value="enviada">Enviada</option>
+                        <option value="recibida">Recibida</option>
+                    </select>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Artículo</th>
+                                <th>Cantidad</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requests-tbody">
+                            <tr><td colspan="6" style="text-align: center;">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección Inventario -->
+            <section id="inventory-section" class="content-section" style="display: none;">
+                <h2>Administrar Inventario</h2>
+                
+                <button class="btn-primary" data-action="add-inventory">+ Agregar Artículo</button>
+                
+                <div class="table-container" style="margin-top: 2rem;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Artículo</th>
+                                <th>Categoría</th>
+                                <th>Cantidad</th>
+                                <th>Unidad</th>
+                                <th>Disponible</th>
+                                <th>Última Actualización</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody">
+                            <tr><td colspan="7" style="text-align: center;">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección Mis Donaciones -->
+            <section id="my-donations-section" class="content-section" style="display: none;">
+                <h2>Mis Donaciones Personales</h2>
+                
+                <div class="alert alert-info" style="margin-bottom: 2rem;">
+                    Esta sección muestra únicamente las donaciones que TÚ has realizado como administrador.
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Artículo</th>
+                                <th>Categoría</th>
+                                <th>Cantidad</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="my-donations-tbody">
+                            <tr><td colspan="5" style="text-align: center;">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección Mis Solicitudes -->
+            <section id="my-requests-section" class="content-section" style="display: none;">
+                <h2>Mis Solicitudes Personales</h2>
+                
+                <div id="my-request-alert"></div>
+                
+                <button class="btn-primary" id="my-new-request-btn" data-action="my-new-request">+ Nueva Solicitud</button>
+                
+                <div class="alert alert-info" style="margin: 2rem 0;">
+                    Esta sección muestra únicamente las solicitudes que TÚ has realizado como administrador.
+                    Solo puedes tener una solicitud activa a la vez.
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Artículo</th>
+                                <th>Cantidad</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="my-requests-tbody">
+                            <tr><td colspan="5" style="text-align: center;">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección Mi Perfil -->
+            <section id="profile-section" class="content-section" style="display: none;">
+                <h2>Mi Perfil de Administrador</h2>
+                
+                <div class="form-container" style="margin-top: 2rem;">
+                    <div id="profile-alert"></div>
+                    
+                    <form id="admin-profile-form">
+                        <div class="form-group">
+                            <label for="admin-nombre">Nombre Completo *</label>
+                            <input type="text" id="admin-nombre" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="admin-email">Email</label>
+                            <input type="email" id="admin-email" disabled style="background: #f0f0f0;">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="admin-telefono">Teléfono</label>
+                            <input type="tel" id="admin-telefono" maxlength="10" placeholder="10 dígitos">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="admin-direccion">Dirección</label>
+                            <textarea id="admin-direccion" placeholder="Tu dirección completa"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Rol</label>
+                            <input type="text" value="Administrador" disabled style="background: #f0f0f0; font-weight: 700; color: var(--primary-color);">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="admin-fecha-registro">Miembro desde</label>
+                            <input type="text" id="admin-fecha-registro" disabled style="background: #f0f0f0;">
+                        </div>
+                        
+                        <button type="submit" class="btn-primary" style="width: 100%;">Actualizar Perfil</button>
+                    </form>
+                    
+                    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid var(--light-color);">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Cambiar Contraseña</h3>
+                        <form id="change-password-form">
+                            <div class="form-group">
+                                <label for="current-password">Contraseña Actual *</label>
+                                <input type="password" id="current-password" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="new-password">Nueva Contraseña *</label>
+                                <input type="password" id="new-password" required minlength="6">
+                                <small style="color: var(--gray-color);">Mínimo 6 caracteres, incluir mayúscula, minúscula y número</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="confirm-password">Confirmar Nueva Contraseña *</label>
+                                <input type="password" id="confirm-password" required>
+                            </div>
+                            
+                            <button type="submit" class="btn-warning" style="width: 100%;">Cambiar Contraseña</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Cambiar Estado Donación -->
+    <div id="donation-status-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cambiar Estado de Donación</h3>
+                <span class="modal-close" data-modal="donation-status">&times;</span>
+            </div>
+            <form id="donation-status-form">
+                <input type="hidden" id="donation-id">
+                
+                <div class="form-group">
+                    <label>Donación</label>
+                    <input type="text" id="donation-info" disabled>
+                </div>
+                
+                <div class="form-group">
+                    <label for="donation-new-status">Nuevo Estado *</label>
+                    <select id="donation-new-status" required>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="aceptada">Aceptada</option>
+                        <option value="rechazada">Rechazada</option>
+                        <option value="recibida">Recibida</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="donation-notes">Notas</label>
+                    <textarea id="donation-notes" placeholder="Comentarios opcionales..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">Actualizar Estado</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Cambiar Estado Solicitud -->
+    <div id="request-status-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cambiar Estado de Solicitud</h3>
+                <span class="modal-close" data-modal="request-status">&times;</span>
+            </div>
+            <form id="request-status-form">
+                <input type="hidden" id="request-id">
+                
+                <div class="form-group">
+                    <label>Solicitud</label>
+                    <input type="text" id="request-info" disabled>
+                </div>
+                
+                <div class="form-group">
+                    <label for="request-new-status">Nuevo Estado *</label>
+                    <select id="request-new-status" required>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="aceptada">Aceptada</option>
+                        <option value="rechazada">Rechazada</option>
+                        <option value="enviada">Enviada</option>
+                        <option value="recibida">Recibida</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="reject-reason-group" style="display: none;">
+                    <label for="request-reject-reason">Motivo de Rechazo *</label>
+                    <textarea id="request-reject-reason" placeholder="Explica por qué se rechaza..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="request-notes">Notas</label>
+                    <textarea id="request-notes" placeholder="Comentarios opcionales..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">Actualizar Estado</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Usuario -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Editar Usuario</h3>
+                <span class="modal-close" data-modal="user">&times;</span>
+            </div>
+            <form id="user-form">
+                <input type="hidden" id="user-id">
+                
+                <div class="form-group">
+                    <label for="user-nombre">Nombre *</label>
+                    <input type="text" id="user-nombre" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="user-email">Email *</label>
+                    <input type="email" id="user-email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="user-telefono">Teléfono</label>
+                    <input type="tel" id="user-telefono" maxlength="10">
+                </div>
+                
+                <div class="form-group">
+                    <label for="user-rol">Rol *</label>
+                    <select id="user-rol" required>
+                        <option value="usuario">Usuario</option>
+                        <option value="administrador">Administrador</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="user-activo">Estado *</label>
+                    <select id="user-activo" required>
+                        <option value="true">Activo</option>
+                        <option value="false">Inactivo</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">Actualizar Usuario</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Agregar/Editar Inventario -->
+    <div id="inventory-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="inventory-modal-title">Agregar Artículo</h3>
+                <span class="modal-close" data-modal="inventory">&times;</span>
+            </div>
+            <form id="inventory-form">
+                <input type="hidden" id="inventory-id">
+                
+                <div class="form-group">
+                    <label for="inventory-nombre">Nombre del Artículo *</label>
+                    <input type="text" id="inventory-nombre" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="inventory-categoria">Categoría *</label>
+                    <select id="inventory-categoria" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="alimento_perros">Alimento para Perros</option>
+                        <option value="alimento_gatos">Alimento para Gatos</option>
+                        <option value="juguetes">Juguetes</option>
+                        <option value="medicamentos">Medicamentos</option>
+                        <option value="accesorios">Accesorios</option>
+                        <option value="mantas">Mantas</option>
+                        <option value="otros">Otros</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="inventory-cantidad">Cantidad *</label>
+                    <input type="number" id="inventory-cantidad" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="inventory-unidad">Unidad *</label>
+                    <select id="inventory-unidad" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="kg">Kilogramos</option>
+                        <option value="unidades">Unidades</option>
+                        <option value="litros">Litros</option>
+                        <option value="paquetes">Paquetes</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="inventory-descripcion">Descripción</label>
+                    <textarea id="inventory-descripcion"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="inventory-disponible">Disponible *</label>
+                    <select id="inventory-disponible" required>
+                        <option value="true">Sí</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">Guardar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nueva Solicitud Personal -->
+    <div id="request-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nueva Solicitud Personal</h3>
+                <span class="modal-close" data-modal="my-request">&times;</span>
+            </div>
+            <form id="my-request-form">
+                <div class="form-group">
+                    <label for="request-articulo">Artículo *</label>
+                    <select id="request-articulo" required>
+                        <option value="">Seleccionar artículo...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="request-cantidad">Cantidad *</label>
+                    <input type="number" id="request-cantidad" min="1" required>
+                    <small id="request-max-cantidad" style="color: var(--gray-color);"></small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="request-descripcion">Descripción (Opcional)</label>
+                    <textarea id="request-descripcion" placeholder="Explica para qué necesitas este artículo..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">Enviar Solicitud</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Solicitud Personal -->
+    <div id="edit-request-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Editar Solicitud Personal</h3>
+                <span class="modal-close" data-modal="edit-my-request">&times;</span>
+            </div>
+            <form id="edit-my-request-form">
+                <input type="hidden" id="edit-request-id">
+                
+                <div class="form-group">
+                    <label>Artículo</label>
+                    <input type="text" id="edit-request-articulo-name" disabled style="background: #f0f0f0;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-request-cantidad">Cantidad *</label>
+                    <input type="number" id="edit-request-cantidad" min="1" required>
+                    <small id="edit-request-max-cantidad" style="color: var(--gray-color);"></small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-request-descripcion">Descripción (Opcional)</label>
+                    <textarea id="edit-request-descripcion" placeholder="Explica para qué necesitas este artículo..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">Actualizar Solicitud</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/admin-dashboard.js"></script>
+</body>
+</html>

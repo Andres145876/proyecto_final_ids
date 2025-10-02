@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Patitas Felices</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🐾 Patitas Felices</h1>
+            </div>
+            <div class="nav-links">
+                <a href="../index.html">Inicio</a>
+                <a href="contact.html">Contacto</a>
+                <a href="login.html">Iniciar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="form-container">
+        <h2 style="text-align: center; margin-bottom: 2rem; color: var(--primary-color);">Crear Cuenta</h2>
+        
+        <div id="alert-container"></div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="nombre">Nombre Completo</label>
+                <input type="text" id="nombre" name="nombre" required placeholder="Tu nombre completo">
+                <div class="form-error" id="nombre-error"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Correo Electrónico</label>
+                <input type="email" id="email" name="email" required placeholder="tu@email.com">
+                <div class="form-error" id="email-error"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" name="password" required placeholder="Mínimo 6 caracteres">
+                <small style="color: var(--gray-color);">Debe contener al menos una mayúscula, una minúscula y un número</small>
+                <div class="form-error" id="password-error"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="telefono">Teléfono (Opcional)</label>
+                <input type="tel" id="telefono" name="telefono" placeholder="10 dígitos" maxlength="10">
+                <div class="form-error" id="telefono-error"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="direccion">Dirección (Opcional)</label>
+                <textarea id="direccion" name="direccion" placeholder="Tu dirección"></textarea>
+                <div class="form-error" id="direccion-error"></div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%;">Registrarse</button>
+        </form>
+
+        <p style="text-align: center; margin-top: 1.5rem;">
+            ¿Ya tienes cuenta? <a href="login.html" style="color: var(--primary-color); font-weight: 600;">Inicia sesión aquí</a>
+        </p>
+    </div>
+
+    <!-- Scripts externos - NO más scripts inline -->
+    <script src="../js/api.js"></script>
+    <script src="../js/register.js"></script>
+</body>
+</html>
