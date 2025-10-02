@@ -39,9 +39,9 @@ app.use(
   })
 );
 
-// CORS simplificado para producción
+// CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*', // Cambiar '*' por tu frontend URL en producción
+  origin: process.env.FRONTEND_URL || '*',
   credentials: true
 }));
 
@@ -51,7 +51,6 @@ const limiter = rateLimit({
   max: 100,
   message: 'Demasiadas peticiones desde esta IP, por favor intenta de nuevo más tarde.'
 });
-
 app.use('/api/', limiter);
 
 const authLimiter = rateLimit({
@@ -59,7 +58,6 @@ const authLimiter = rateLimit({
   max: 5,
   message: 'Demasiados intentos de inicio de sesión, por favor intenta de nuevo más tarde.'
 });
-
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
@@ -68,20 +66,21 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ============================================
-// Servir frontend (si existe)
+// Servir frontend
 // ============================================
 const frontendPath = path.join(__dirname, '../frontend');
 app.use(express.static(frontendPath));
 
-// Rutas específicas del frontend
-app.get('/admin/dashboard', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'admin/dashboard.html'));
+// Rutas HTML del frontend
+app.get('/pages/:page', (req, res) => {
+  const page = req.params.page;
+  res.sendFile(path.join(frontendPath, 'pages', page));
 });
 
-app.get('/admin/dashboard.html', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'admin/dashboard.html'));
+// Ruta raíz
+app.get('/', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
-// ============================================
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
@@ -99,23 +98,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Ruta raíz
-app.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Bienvenido a la API de Patitas Felices',
-    version: '1.0.0',
-    endpoints: {
-      health: '/api/health',
-      auth: '/api/auth',
-      users: '/api/users',
-      donations: '/api/donations',
-      requests: '/api/requests',
-      inventory: '/api/inventory'
-    }
-  });
-}); 
-
 // Manejo de rutas no encontradas
 app.use((req, res) => {
   res.status(404).json({
@@ -127,7 +109,6 @@ app.use((req, res) => {
 // Manejo global de errores
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Error interno del servidor',
