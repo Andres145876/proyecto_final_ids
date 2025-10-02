@@ -29,7 +29,7 @@ app.use(
         scriptSrcAttr: ["'unsafe-inline'", "'unsafe-hashes'"], // <-- AGREGAR ESTA LÍNEA
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "http://localhost:5000", "http://127.0.0.1:5000"],
+        connectSrc: ["'self'", "http://localhost:5000", "http://127.0.0.1:5000", "https://patitas-backend.onrender.com"],
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
