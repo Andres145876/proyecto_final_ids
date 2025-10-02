@@ -19,8 +19,26 @@ const app = express();
 connectDB();
 
 // Middleware de seguridad
-app.use(helmet());
 
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrcAttr: ["'unsafe-inline'", "'unsafe-hashes'"], // <-- AGREGAR ESTA LÍNEA
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "http://localhost:5000", "http://127.0.0.1:5000"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 // CORS
 app.use(cors({
   origin: function(origin, callback) {
@@ -53,7 +71,7 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 5 * 60 * 1000,
   max: 100,
   message: 'Demasiadas peticiones desde esta IP, por favor intenta de nuevo más tarde.'
 });

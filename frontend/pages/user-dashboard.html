@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Dashboard - Patitas Felices</title>
-    <link rel="stylesheet" href="/proyecto_final_ids/frontend/.css/styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="dashboard">
@@ -45,12 +45,12 @@
                     <div class="card">
                         <h3>Hacer una Donación</h3>
                         <p>Dona alimentos, juguetes o artículos para ayudar a nuestros amigos peludos.</p>
-                        <button class="btn-primary" onclick="showSection('donations')">Donar Ahora</button>
+                        <button class="btn-primary" data-action="show-donations">Donar Ahora</button>
                     </div>
                     <div class="card">
                         <h3>Solicitar Donación</h3>
                         <p>¿Cuidas animales rescatados? Solicita artículos de nuestro inventario.</p>
-                        <button class="btn-primary" onclick="showSection('requests')">Solicitar</button>
+                        <button class="btn-primary" data-action="show-requests">Solicitar</button>
                     </div>
                 </div>
             </section>
@@ -59,7 +59,7 @@
             <section id="donations-section" class="content-section" style="display: none;">
                 <h2>Mis Donaciones</h2>
                 
-                <button class="btn-primary" onclick="showDonationModal()">+ Nueva Donación</button>
+                <button class="btn-primary" data-action="new-donation">+ Nueva Donación</button>
                 
                 <div class="table-container" style="margin-top: 2rem;">
                     <table id="donations-table">
@@ -87,7 +87,7 @@
                 
                 <div id="request-alert" style="margin-bottom: 1rem;"></div>
                 
-                <button class="btn-primary" id="new-request-btn" onclick="showRequestModal()">+ Nueva Solicitud</button>
+                <button class="btn-primary" id="new-request-btn" data-action="new-request">+ Nueva Solicitud</button>
                 
                 <div class="table-container" style="margin-top: 2rem;">
                     <table id="requests-table">
@@ -115,7 +115,7 @@
                 
                 <div class="form-group" style="max-width: 300px;">
                     <label for="category-filter">Filtrar por Categoría</label>
-                    <select id="category-filter" onchange="loadInventory()">
+                    <select id="category-filter">
                         <option value="">Todas las categorías</option>
                         <option value="alimento_perros">Alimento para Perros</option>
                         <option value="alimento_gatos">Alimento para Gatos</option>
@@ -185,7 +185,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Nueva Donación</h3>
-                <button type="button" class="modal-close" onclick="closeDonationModal()" aria-label="Cerrar modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+                <button type="button" class="modal-close" data-modal="donation" aria-label="Cerrar modal">&times;</button>
             </div>
             <form id="donation-form">
                 <div class="form-group">
@@ -238,7 +238,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Nueva Solicitud</h3>
-                <button type="button" class="modal-close" onclick="closeRequestModal()" aria-label="Cerrar modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+                <button type="button" class="modal-close" data-modal="request" aria-label="Cerrar modal">&times;</button>
             </div>
             <form id="request-form">
                 <div class="form-group">
@@ -269,7 +269,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Modificar Solicitud</h3>
-                <button type="button" class="modal-close" onclick="closeEditRequestModal()" aria-label="Cerrar modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+                <button type="button" class="modal-close" data-modal="edit-request" aria-label="Cerrar modal">&times;</button>
             </div>
             <form id="edit-request-form">
                 <input type="hidden" id="edit-request-id">

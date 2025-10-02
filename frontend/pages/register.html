@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro - Patitas Felices</title>
-    <link rel="stylesheet" href="/proyecto_final_ids/frontend/.css/styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <nav class="navbar">
@@ -65,54 +65,8 @@
         </p>
     </div>
 
+    <!-- Scripts externos - NO más scripts inline -->
     <script src="../js/api.js"></script>
-    <script src="../js/auth.js"></script>
-    <script>
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const alertContainer = document.getElementById('alert-container');
-            alertContainer.innerHTML = '';
-            
-            const formData = {
-                nombre: document.getElementById('nombre').value,
-                email: document.getElementById('email').value,
-                password: document.getElementById('password').value,
-                telefono: document.getElementById('telefono').value,
-                direccion: document.getElementById('direccion').value
-            };
-            
-            try {
-                const response = await api.post('/auth/register', formData);
-                
-                if (response.success) {
-                    localStorage.setItem('token', response.token);
-                    localStorage.setItem('user', JSON.stringify(response.user));
-                    
-                    showAlert('Registro exitoso. Redirigiendo...', 'success');
-                    
-                    setTimeout(() => {
-                        window.location.href = 'user-dashboard.html';
-                    }, 1500);
-                }
-            } catch (error) {
-                if (error.errors) {
-                    error.errors.forEach(err => {
-                        showAlert(`${err.field}: ${err.message}`, 'danger');
-                    });
-                } else {
-                    showAlert(error.message || 'Error al registrarse', 'danger');
-                }
-            }
-        });
-        
-        function showAlert(message, type) {
-            const alertContainer = document.getElementById('alert-container');
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type}`;
-            alert.textContent = message;
-            alertContainer.appendChild(alert);
-        }
-    </script>
+    <script src="../js/register.js"></script>
 </body>
 </html>

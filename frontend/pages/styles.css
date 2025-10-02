@@ -598,6 +598,8 @@ tbody tr:hover {
         grid-template-columns: 1fr;
     }
 
+
+    
         /* Alertas */
     .alert {
         padding: 15px;
@@ -623,4 +625,5 @@ tbody tr:hover {
         color: #0c5460;
         border: 1px solid #bee5eb;
     }
+
 }

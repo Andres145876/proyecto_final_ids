@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - Patitas Felices</title>
-    <link rel="stylesheet" href="/proyecto_final_ids/frontend/.css/styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <nav class="navbar">
@@ -46,44 +46,8 @@
         </p>
     </div>
 
+    <!-- Scripts externos -->
     <script src="../js/api.js"></script>
-    <script src="../js/auth.js"></script>
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const alertContainer = document.getElementById('alert-container');
-            alertContainer.innerHTML = '';
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            try {
-                const response = await api.post('/auth/login', { email, password });
-                
-                if (response.success) {
-                    localStorage.setItem('token', response.token);
-                    localStorage.setItem('user', JSON.stringify(response.user));
-                    
-                    showAlert('Inicio de sesión exitoso. Redirigiendo...', 'success');
-                    
-                    setTimeout(() => {
-                        if (response.user.rol === 'administrador') {
-                            window.location.href = 'admin-dashboard.html';
-                        } else {
-                            window.location.href = 'user-dashboard.html';
-                        }
-                    }, 1500);
-                }
-            } catch (error) {
-                showAlert(error.message || 'Error al iniciar sesión', 'danger');
-            }
-        });
-        
-        function showAlert(message, type) {
-            const alertContainer = document.getElementById('alert-container');
-            alertContainer.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
-        }
-    </script>
+    <script src="../js/login.js"></script>
 </body>
 </html>

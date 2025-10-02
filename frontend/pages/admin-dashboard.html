@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Administrador - Patitas Felices</title>
-    <link rel="stylesheet" href="/proyecto_final_ids/frontend/.css/styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="dashboard">
@@ -106,7 +106,7 @@
                 
                 <div class="form-group" style="max-width: 300px;">
                     <label>Filtrar por Estado</label>
-                    <select id="donation-status-filter" onchange="loadDonations()">
+                    <select id="donation-status-filter">
                         <option value="">Todos</option>
                         <option value="pendiente">Pendiente</option>
                         <option value="aceptada">Aceptada</option>
@@ -141,7 +141,7 @@
                 
                 <div class="form-group" style="max-width: 300px;">
                     <label>Filtrar por Estado</label>
-                    <select id="request-status-filter" onchange="loadRequests()">
+                    <select id="request-status-filter">
                         <option value="">Todos</option>
                         <option value="pendiente">Pendiente</option>
                         <option value="aceptada">Aceptada</option>
@@ -174,7 +174,7 @@
             <section id="inventory-section" class="content-section" style="display: none;">
                 <h2>Administrar Inventario</h2>
                 
-                <button class="btn-primary" onclick="showAddInventoryModal()">+ Agregar Artículo</button>
+                <button class="btn-primary" data-action="add-inventory">+ Agregar Artículo</button>
                 
                 <div class="table-container" style="margin-top: 2rem;">
                     <table>
@@ -228,7 +228,7 @@
                 
                 <div id="my-request-alert"></div>
                 
-                <button class="btn-primary" id="my-new-request-btn" onclick="showMyRequestModal()">+ Nueva Solicitud</button>
+                <button class="btn-primary" id="my-new-request-btn" data-action="my-new-request">+ Nueva Solicitud</button>
                 
                 <div class="alert alert-info" style="margin: 2rem 0;">
                     Esta sección muestra únicamente las solicitudes que TÚ has realizado como administrador.
@@ -326,7 +326,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Cambiar Estado de Donación</h3>
-                <span class="modal-close" onclick="closeDonationStatusModal()">&times;</span>
+                <span class="modal-close" data-modal="donation-status">&times;</span>
             </div>
             <form id="donation-status-form">
                 <input type="hidden" id="donation-id">
@@ -361,7 +361,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Cambiar Estado de Solicitud</h3>
-                <span class="modal-close" onclick="closeRequestStatusModal()">&times;</span>
+                <span class="modal-close" data-modal="request-status">&times;</span>
             </div>
             <form id="request-status-form">
                 <input type="hidden" id="request-id">
@@ -402,7 +402,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Editar Usuario</h3>
-                <span class="modal-close" onclick="closeUserModal()">&times;</span>
+                <span class="modal-close" data-modal="user">&times;</span>
             </div>
             <form id="user-form">
                 <input type="hidden" id="user-id">
@@ -448,7 +448,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="inventory-modal-title">Agregar Artículo</h3>
-                <span class="modal-close" onclick="closeInventoryModal()">&times;</span>
+                <span class="modal-close" data-modal="inventory">&times;</span>
             </div>
             <form id="inventory-form">
                 <input type="hidden" id="inventory-id">
@@ -511,7 +511,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Nueva Solicitud Personal</h3>
-                <span class="modal-close" onclick="closeMyRequestModal()">&times;</span>
+                <span class="modal-close" data-modal="my-request">&times;</span>
             </div>
             <form id="my-request-form">
                 <div class="form-group">
@@ -542,7 +542,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Editar Solicitud Personal</h3>
-                <span class="modal-close" onclick="closeEditRequestModal()">&times;</span>
+                <span class="modal-close" data-modal="edit-my-request">&times;</span>
             </div>
             <form id="edit-my-request-form">
                 <input type="hidden" id="edit-request-id">

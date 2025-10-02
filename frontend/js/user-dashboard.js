@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Configurar navegación
     setupNavigation();
     
+    // Configurar event handlers globales
+    setupGlobalEventHandlers();
+    
     // Configurar logout
     document.getElementById('logoutBtn').addEventListener('click', (e) => {
         e.preventDefault();
@@ -30,6 +33,63 @@ document.addEventListener('DOMContentLoaded', () => {
     // Configurar formularios
     setupForms();
 });
+
+// Configurar event handlers globales
+function setupGlobalEventHandlers() {
+    // Botones con data-action
+    document.addEventListener('click', (e) => {
+        const target = e.target;
+        
+        // Manejar botones con data-action
+        if (target.dataset.action) {
+            e.preventDefault();
+            handleAction(target.dataset.action);
+        }
+        
+        // Manejar botones de cerrar modal
+        if (target.classList.contains('modal-close')) {
+            const modalType = target.dataset.modal;
+            if (modalType === 'donation') closeDonationModal();
+            else if (modalType === 'request') closeRequestModal();
+            else if (modalType === 'edit-request') closeEditRequestModal();
+        }
+        
+        // Manejar botones de editar/eliminar solicitud
+        if (target.classList.contains('btn-edit-request')) {
+            const requestId = target.dataset.id;
+            editRequest(requestId);
+        }
+        
+        if (target.classList.contains('btn-delete-request')) {
+            const requestId = target.dataset.id;
+            deleteRequest(requestId);
+        }
+    });
+    
+    // Filtro de inventario
+    const categoryFilter = document.getElementById('category-filter');
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', loadInventory);
+    }
+}
+
+// Manejar acciones de botones
+function handleAction(action) {
+    switch(action) {
+        case 'show-donations':
+            showSection('donations');
+            break;
+        case 'show-requests':
+            showSection('requests');
+            break;
+        case 'new-donation':
+            showDonationModal();
+            break;
+        case 'new-request':
+            showRequestModal();
+            break;
+    }
+}
 
 // Configurar navegación entre secciones
 function setupNavigation() {
@@ -161,8 +221,8 @@ async function loadRequests() {
                     <td><span class="badge ${utils.getBadgeClass(request.estado)}">${request.estado.toUpperCase()}</span></td>
                     <td>${utils.formatDate(request.fechaSolicitud)}</td>
                     <td>
-                        ${canEdit ? `<button class="btn-sm btn-info" onclick="editRequest('${request._id}')">Modificar</button>` : ''}
-                        ${canDelete ? `<button class="btn-sm btn-danger" onclick="deleteRequest('${request._id}')">Eliminar</button>` : ''}
+                        ${canEdit ? `<button class="btn-sm btn-info btn-edit-request" data-id="${request._id}">Modificar</button>` : ''}
+                        ${canDelete ? `<button class="btn-sm btn-danger btn-delete-request" data-id="${request._id}">Eliminar</button>` : ''}
                         ${!canEdit && !canDelete ? '<span style="color: var(--gray-color);">Sin acciones</span>' : ''}
                     </td>
                 </tr>
@@ -331,7 +391,6 @@ function closeDonationModal() {
 }
 
 async function showRequestModal() {
-    // Cargar inventario disponible
     try {
         const response = await api.get('/inventory?disponible=true');
         const select = document.getElementById('request-articulo');
