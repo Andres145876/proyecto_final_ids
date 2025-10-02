@@ -1,5 +1,5 @@
 // Configuración de la API
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://patitas-backend.onrender.com/api';
 
 // Cliente API
 const api = {
