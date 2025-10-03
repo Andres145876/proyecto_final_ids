@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const path = require('path'); // AGREGAR ESTA LÍNEA
+const path = require('path');
 const connectDB = require('./config/database');
 
 // Importar rutas
@@ -15,18 +15,19 @@ const inventoryRoutes = require('./routes/inventory');
 
 const app = express();
 
-// Conectar a base de datos
-connectDB();
+// Conectar a base de datos SOLO si no estamos en modo test
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
 
 // Middleware de seguridad
-
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrcAttr: ["'unsafe-inline'", "'unsafe-hashes'"], // <-- AGREGAR ESTA LÍNEA
+        scriptSrcAttr: ["'unsafe-inline'", "'unsafe-hashes'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'", "http://localhost:5000", "http://127.0.0.1:5000"],
@@ -39,6 +40,7 @@ app.use(
     crossOriginEmbedderPolicy: false,
   })
 );
+
 // CORS
 app.use(cors({
   origin: function(origin, callback) {
@@ -62,7 +64,6 @@ app.use(cors({
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      console.log('Origin no permitido:', origin);
       callback(null, true);
     }
   },
@@ -91,12 +92,9 @@ app.use('/api/auth/register', authLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ============================================
-// AGREGAR ESTAS LÍNEAS PARA SERVIR EL FRONTEND
-// ============================================
+// Servir frontend
 app.use(express.static(path.join(__dirname, '../../frontend')));
 
-// Rutas específicas para el frontend
 app.get('/admin/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/admin/dashboard.html'));
 });
@@ -104,7 +102,6 @@ app.get('/admin/dashboard', (req, res) => {
 app.get('/admin/dashboard.html', (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/admin/dashboard.html'));
 });
-// ============================================
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
@@ -158,16 +155,20 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+// SOLO iniciar servidor si NO estamos en tests
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 5000;
+  
+  const server = app.listen(PORT, () => {
+    console.log(`Servidor corriendo en puerto ${PORT}`);
+    console.log(`Ambiente: ${process.env.NODE_ENV}`);
+  });
 
-const server = app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
-  console.log(`Ambiente: ${process.env.NODE_ENV}`);
-});
+  process.on('unhandledRejection', (err) => {
+    console.error(`Error: ${err.message}`);
+    server.close(() => process.exit(1));
+  });
+}
 
-process.on('unhandledRejection', (err) => {
-  console.error(`Error: ${err.message}`);
-  server.close(() => process.exit(1));
-});
-
+// Exportar SOLO app para tests
 module.exports = app;
